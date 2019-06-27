@@ -383,10 +383,10 @@ HTML;
 
 	$table = 'expiry';
 	if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
-		$sql = "SELECT * FROM `$table` ORDER BY timestamp DESC";
+		$sql = "SELECT * FROM $table ORDER BY timestamp DESC";
 		$expiry_list = $ydb->fetchObjects($sql);
 	} else {
-		$expiry_list = $ydb->get_results("SELECT * FROM `$table` ORDER BY timestamp DESC");
+		$expiry_list = $ydb->get_results("SELECT * FROM $table ORDER BY timestamp DESC");
 	}
 	if($expiry_list) {
 		foreach( $expiry_list as $expiry ) {
@@ -557,11 +557,11 @@ function show_expiry_tablerow($row, $keyword, $url, $title, $ip, $clicks, $times
 		$table = 'expiry';
 
 		if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
-			$sql = "SELECT * FROM $table WHERE BINARY `keyword` = :keyword";
+			$sql = "SELECT * FROM $table WHERE keyword = :keyword";
 			$binds = array('keyword' => $keyword);
 			$expiry = $ydb->fetchOne($sql, $binds);
 		} else {
-			$expiry = $ydb->get_row("SELECT * FROM `$table` WHERE `keyword` = '$keyword'");
+			$expiry = $ydb->get_row("SELECT * FROM $table WHERE keyword = '$keyword'");
 		}
 	
 		if( $expiry ) {
@@ -651,10 +651,10 @@ function expiry_list_mgr($n) {
 				$table = 'expiry';
 				if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
 					$binds = array('key' => $key);
-					$sql = "DELETE FROM `$table` WHERE `keyword` = :key";
+					$sql = "DELETE FROM $table WHERE keyword = :key";
 					$delete = $ydb->fetchAffected($sql, $binds);
 				} else {
-					$delete = $ydb->query("DELETE FROM `$table` WHERE `keyword` = '$key'");
+					$delete = $ydb->query("DELETE FROM $table WHERE keyword = '$key'");
 				}
 			}
 			// go to list
@@ -667,10 +667,10 @@ function expiry_list_mgr($n) {
 				$table = 'expiry';
 				if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
 					$binds = array('key' => $key);
-					$sql = "UPDATE `$table` SET `postexpire` = 'none' WHERE `keyword` = :key";
+					$sql = "UPDATE $table SET postexpire = 'none' WHERE keyword = :key";
 					$update = $ydb->fetchAffected($sql, $binds);
 				} else {
-					$update = $ydb->query("UPDATE `$table` SET `postexpire` = 'none' WHERE `keyword` = '$key'");
+					$update = $ydb->query("UPDATE $table SET postexpire = 'none' WHERE keyword = '$key'");
 				}
 			}
 			// go to list
@@ -731,11 +731,11 @@ function expiry_check( $args ) {
     $keyword = $args[1]; // Keyword for this request
 	$table = 'expiry';
 	if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
-		$sql = "SELECT * FROM $table WHERE `keyword` = :keyword";
+		$sql = "SELECT * FROM $table WHERE keyword = :keyword";
 		$binds = array('keyword' => $keyword);
 		$expiry = $ydb->fetchOne($sql, $binds);
 	} else {
-		$expiry = $ydb->get_row("SELECT * FROM `$table` WHERE `keyword` = '$keyword'");
+		$expiry = $ydb->get_row("SELECT * FROM $table WHERE keyword = '$keyword'");
 	}
 	if( $expiry ) {
 	
@@ -1067,10 +1067,21 @@ function expiry_new_link( $return, $url , $keyword, $title ) {
 						'fresh' => $fresh,
 						'stale' => $stale,
 						'postx' => $postx );
-		$sql = "REPLACE INTO $table (keyword, type, click, timestamp, shelflife, postexpire) VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')";
+
+//		$sql = "REPLACE INTO $table (keyword, type, click, timestamp, shelflife, postexpire) VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')";
+
+		$sql = "INSERT INTO $table (keyword, type, click, timestamp, shelflife, postexpire)  VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')".
+	"ON CONFLICT (keyword) DO UPDATE ".
+	"SET type = EXCLUDED.type, click = EXCLUDED.click, timestamp = EXCLUDED.timestamp, shelflife = EXCLUDED.shelflife, postexpire = EXCLUDED.postexpire";
 		$insert = $ydb->fetchAffected($sql, $binds);
 	} else {
-		$insert = $ydb->query("REPLACE INTO `$table` (keyword, type, click, timestamp, shelflife, postexpire) VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')");
+
+		$sql = "INSERT INTO $table (keyword, type, click, timestamp, shelflife, postexpire)  VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')".
+	"ON CONFLICT (keyword) DO UPDATE ".
+	"SET type = EXCLUDED.type, click = EXCLUDED.click, timestamp = EXCLUDED.timestamp, shelflife = EXCLUDED.shelflife, postexpire = EXCLUDED.postexpire";
+		//$sql = "REPLACE INTO $table (keyword, type, click, timestamp, shelflife, postexpire) VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')";
+
+		$insert = $ydb->query($sql);
 	}
 
 	return yourls_apply_filter( 'after_expiry_new_link', $return, $url, $keyword, $title );
@@ -1204,10 +1215,18 @@ function expiry_old_link() {
 						'fresh' => $fresh,
 						'stale' => $stale,
 						'postx' => $postx );
-		$sql = "REPLACE INTO $table (keyword, type, click, timestamp, shelflife, postexpire) VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')";
+//		$sql = "REPLACE INTO $table (keyword, type, click, timestamp, shelflife, postexpire) VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')";
+
+		$sql = "INSERT INTO $table (keyword, type, click, timestamp, shelflife, postexpire)  VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')".
+	"ON CONFLICT (keyword) DO UPDATE SET type = EXCLUDED.type, click = EXCLUDED.click, timestamp = EXCLUDED.timestamp, shelflife = EXCLUDED.shelflife, postexpire = EXCLUDED.postexpire";
+
 		$insert = $ydb->fetchAffected($sql, $binds);
 	} else {
-		$insert = $ydb->query("REPLACE INTO `$table` (keyword, type, click, timestamp, shelflife, postexpire) VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')");
+
+		$sql = "INSERT INTO $table (keyword, type, click, timestamp, shelflife, postexpire)  VALUES ('$keyword', '$type', '$click', '$fresh', '$stale', '$postx')".
+	"ON CONFLICT (keyword) DO UPDATE ".
+	"SET type = EXCLUDED.type, click = EXCLUDED.click, timestamp = EXCLUDED.timestamp, shelflife = EXCLUDED.shelflife, postexpire = EXCLUDED.postexpire";
+		$insert = $ydb->query($sql);
 	}
 
 	return yourls_apply_filter( 'after_expiry_old_link', $return, $url, $keyword, $title );
@@ -1410,7 +1429,7 @@ function expiry_activated() {
 		$table_expiry .= "shelflife varchar(20), ";
 		$table_expiry .= "postexpire varchar(200), ";
 		$table_expiry .= "PRIMARY KEY (keyword) ";
-		$table_expiry .= ") ENGINE=MyISAM DEFAULT CHARSET=latin1;";
+		$table_expiry .= ");";
 
 		if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
 			$tables = $ydb->fetchAffected($table_expiry);
@@ -1455,10 +1474,10 @@ function expiry_db_flush( $type ) {
 		// get rid of expired links that have not been triggered
 		case 'expired':
 			if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
-				$sql = "SELECT * FROM `$table` ORDER BY timestamp DESC";
+				$sql = "SELECT * FROM $table ORDER BY timestamp DESC";
 				$expiry_list = $ydb->fetchObjects($sql);
 			} else {
-				$expiry_list = $ydb->get_results("SELECT * FROM `$table` ORDER BY timestamp DESC");
+				$expiry_list = $ydb->get_results("SELECT * FROM $table ORDER BY timestamp DESC");
 			}
 			
 			if($expiry_list) {
@@ -1481,7 +1500,7 @@ function expiry_db_flush( $type ) {
 					$sql = "TRUNCATE TABLE $table";
 					$ydb->fetchAffected($sql);
 				} else {
-					$ydb->query("TRUNCATE TABLE `$table`");
+					$ydb->query("TRUNCATE TABLE $table");
 				}
 
 				yourls_update_option('expiry_init', time());
@@ -1497,10 +1516,10 @@ function expiry_db_flush( $type ) {
 		// delete every short url that is set to expire	
 		case 'killall': // nuke
 			if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
-				$sql = "SELECT * FROM `$table` ORDER BY timestamp DESC";
+				$sql = "SELECT * FROM $table ORDER BY timestamp DESC";
 				$expiry_list = $ydb->fetchObjects($sql);
 			} else {
-				$ydb->get_results("SELECT * FROM `$table` ORDER BY timestamp DESC");
+				$ydb->get_results("SELECT * FROM $table ORDER BY timestamp DESC");
 			}
 			
 			if($expiry_list) {
@@ -1515,10 +1534,10 @@ function expiry_db_flush( $type ) {
 		default: 	// expired
 
 			if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
-				$sql = "SELECT * FROM `$table` ORDER BY timestamp DESC";
+				$sql = "SELECT * FROM $table ORDER BY timestamp DESC";
 				$expiry_list = $ydb->fetchObjects($sql);
 			} else {
-				$expiry_list = $ydb->get_results("SELECT * FROM `$table` ORDER BY timestamp DESC");
+				$expiry_list = $ydb->get_results("SELECT * FROM $table ORDER BY timestamp DESC");
 			}
 			
 			if($expiry_list) {
@@ -1547,10 +1566,10 @@ function expiry_cleanup( $args ) {
 
 	if (version_compare(YOURLS_VERSION, '1.7.3') >= 0) {
 		$binds = array(	'keyword' => $keyword );
-		$sql = "DELETE FROM $table WHERE `keyword` = :keyword";
+		$sql = "DELETE FROM $table WHERE keyword = :keyword";
 		$ydb->fetchAffected($sql, $binds);
 	} else {
-		$ydb->query("DELETE FROM `$table` WHERE `keyword` = '$keyword';");
+		$ydb->query("DELETE FROM $table WHERE keyword = '$keyword';");
 	}
 
 
