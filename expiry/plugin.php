@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: Expiry
-Plugin URI: https://github.com/joshp23/YOURLS-Expiry
+Plugin URI: https://github.com/raikou-Oh/YOURLS-PostgreSQL-Expiry/
 Description: Will set expiration conditions on your links (or not)
 Version: 2.0.3
-Author: Josh Panter
-Author URI: https://unfettered.net
+Author: 
+Author URI: 
 */
 // No direct call
 if( !defined( 'YOURLS_ABSPATH' ) ) die();
@@ -16,6 +16,8 @@ if( !defined( 'YOURLS_ABSPATH' ) ) die();
  *
 */
 // Register admin forms
+
+
 yourls_add_action( 'plugins_loaded', 'expiry_add_pages' );
 function expiry_add_pages() {
         yourls_register_plugin_page( 'expiry', 'Expiry', 'expiry_do_page' );
@@ -158,7 +160,8 @@ echo <<<HTML
 
 						<div style="padding-left: 10pt;border-left:1px solid blue;border-bottom:1px solid blue;">
 
-							<p><label for="expiry_custom">Enter intercept URL here</label> <input type="text" size=40 id="expiry_custom" name="expiry_custom" value="$opt[1]" /></p>
+							<p><label for="expiry_custom">Enter intercept URL here</label> 
+			<input type="text" size=40 id="expiry_custom" name="expiry_custom" value="$opt[1]"/></p>
 							<p>Setting the above option without setting this will fall back to default behavior.</p>
 
 						</div>
@@ -174,20 +177,7 @@ echo <<<HTML
 						<p>Instead of being deleted form the database, expiry short links can be edited to a new url when they expire. You can set a global value for this here.</p>
 
 						<p>An alternative way to acheive this might be to use the <a href="https://diegopeinador.blogspot.com/2013/04/fallback-url-simple-plugin-for-yourls.html" target="_blank">Fallbak-URL</a> plugin. Combined, there is a lot of flexibility.</p>
-					</div>
-
-					<div style="display:$gpxVisChk;">
-						<br>
-						<h3>Global Post Expiry Destination URL</h3>
-
-						<div style="padding-left: 10pt;border-left:1px solid blue;border-bottom:1px solid blue;">
-
-							<p><label for="expiry_custom">Enter intercept URL here</label> <input type="text" size=40 id="expiry_custom" name="expiry_custom" value="$opt[1]" /></p>
-							<p>Setting the above option without setting this will fall back to default behavior.</p>
-
-						</div>
-					</div>
-					
+					</div>										
 					<br>
 					<h3>Expose Expiry Tags</h3>
 
@@ -455,7 +445,7 @@ echo <<<HTML
 		var alias = getExpiryCookie('expiry');
 		if (alias != "") {
          document.getElementById('shorturl').value = alias;
-			$(window).unload(function() {
+			$(window).on("beforeunload", function() {
 				document.cookie = 'expiry'+'=; Max-Age=-99999999;';  
 			});
 		}
@@ -620,10 +610,10 @@ function expiry_stats($keyword) {
 */
 // Options updater
 function expiry_update_ops() {
+
 	if(isset( $_POST['expiry_global_expiry'])) {
 		// Check nonce
 		yourls_verify_nonce( 'expiry' );
-
 		yourls_update_option( 'expiry_global_expiry', $_POST['expiry_global_expiry'] );
 		if(isset( $_POST['expiry_default_click'] )) yourls_update_option( 'expiry_default_click', $_POST['expiry_default_click'] );
 		if(isset( $_POST['expiry_default_age'] )) yourls_update_option( 'expiry_default_age', $_POST['expiry_default_age'] );
@@ -831,7 +821,7 @@ function expiry_router($keyword, $result, $postx) {
 					yourls_die('This short URL has expired.', 'Link Expired', '403');
 				case 'template': 
 					expiry_display_expired($keyword, $result);
-				case 'custom':
+				case 'custome':
 					$expiry_custom = yourls_get_option( 'expiry_custom' );
 					if ($expiry_custom !== 'none') { 
 						yourls_redirect( $expiry_custom, 302 );
